@@ -29,10 +29,10 @@ dnf5 install -y \
 
 ### Remove packages
 
-# Task 019's rule is that a package which is only wrong on the homescreen gets a blacklist
-# entry instead of being uninstalled. plasma-welcome is the exception: the tour starts itself
-# on first login rather than being launched from a tile, so hiding the entry does not stop it.
-# plasma-setup is a different thing and stays.
+# A package that is only wrong on the homescreen gets an entry in
+# /usr/share/atomc/applications-blacklistrc instead of being uninstalled. plasma-welcome is
+# the exception: the tour starts itself on first login rather than being launched from a tile,
+# so hiding its desktop entry does not stop it. plasma-setup is a different thing and stays.
 dnf5 remove -y plasma-welcome
 
 ### Install shipped files

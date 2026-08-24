@@ -1,9 +1,9 @@
 #!/bin/bash
 # Print the account the image treats as the primary user, or exit 1 if there is none.
 #
-# The installer creates the account, so the image cannot know the name at build time. Every
-# piece that needs it (the plasmalogin autologin config, the tty6 getty) resolves it through
-# this script so the answers cannot drift apart.
+# The installer creates the account, so the image cannot know the name at build time.
+# atomc-autologin-setup resolves it through this script; anything else that comes to need it
+# should do the same, so that the answers cannot drift apart.
 
 set -o pipefail
 
