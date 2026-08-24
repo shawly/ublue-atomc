@@ -4,14 +4,27 @@ set -ouex pipefail
 
 ### Install packages
 
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
+# The base image enables fedora, updates, updates-archive, fedora-cisco-openh264 and the
+# ublue akmods copr. negativo17's fedora-multimedia is present but disabled; the mesa and
+# libva already installed from it stay installed, which is what keeps hardware decode working.
+
+# Kodi is packaged in neither Fedora nor Negativo17, so RPM Fusion Free has to be here.
+dnf5 install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
 
 # plasma-bigscreen pulls in plasma-nano, the Bigscreen KCMs and
 # plasma-bigscreen-inputhandler along with the wayland session file.
+#
+# kodi ships one /usr/lib64/kodi/kodi.bin with x11, wayland and gbm compiled in; the backend
+# is picked at runtime with --windowing. The package's own kodi-gbm.desktop session does that.
+#
+# igt-gpu-tools and libva-utils are for checking hardware decode on the target machine.
+# libva-utils is already in the base image and is named here so the intent survives a base
+# image that stops shipping it.
 dnf5 install -y \
+    igt-gpu-tools \
+    kodi \
+    kodi-inputstream-adaptive \
+    libva-utils \
     plasma-bigscreen
 
 ### Remove packages
