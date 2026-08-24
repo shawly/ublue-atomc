@@ -7,7 +7,12 @@
 
      The Menu button additionally needs the hwdb remap in
      /usr/lib/udev/hwdb.d/70-atomc-firetv-remote.hwdb. Without it the press never reaches
-     the keymap layer. -->
+     the keymap layer.
+
+     Kodi reads every .xml in this directory sorted by filename, then the ones in
+     ~/.kodi/userdata/keymaps/, and a later binding replaces an earlier one. The zz- prefix
+     is what puts this file after keyboard.xml, which binds VirtualKeyboard menu itself. A
+     numeric prefix would sort ahead of it and the override below would be discarded. -->
 <keymap>
   <global>
     <keyboard>
