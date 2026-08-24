@@ -1,0 +1,19 @@
+#!/bin/bash
+# Put the image's homescreen blacklist where Bigscreen will actually read it.
+#
+# plasma-bigscreen-common-env prepends ~/.config/plasma-bigscreen to XDG_CONFIG_DIRS and
+# plasma-bigscreen-envmanager writes an applications-blacklistrc there at every session
+# start. KConfig takes the whole list from the highest priority file that defines the key,
+# so a copy under /etc/xdg is never read. XDG_CONFIG_HOME comes before all of that.
+#
+# The copy is unconditional rather than a first login seed, so that entries added to a later
+# image reach accounts that already exist. The file belongs to the image; edit
+# /usr/share/atomc/applications-blacklistrc.
+
+set -ouex pipefail
+
+source=/usr/share/atomc/applications-blacklistrc
+target="${XDG_CONFIG_HOME:-${HOME}/.config}/applications-blacklistrc"
+
+mkdir -p "${target%/*}"
+install -m 0644 "${source}" "${target}"

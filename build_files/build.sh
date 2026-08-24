@@ -58,7 +58,9 @@ systemctl enable sshd.service
 systemctl enable atomc-autologin-setup.service
 
 # --global enables for every user rather than for root, whose session never starts here.
-systemctl --global enable atomc-seed-permissions.service
+systemctl --global enable \
+    atomc-seed-permissions.service \
+    atomc-app-blacklist.service
 
 ### Compile the hardware database
 
