@@ -1,5 +1,10 @@
-# Disk layout for `just build-qcow2` and `just build-raw`. The ISO does not use this file;
-# Anaconda partitions the target itself.
+# Disk layout for the images CI publishes from build-disk.yml. The ISO does not use this
+# file; Anaconda partitions the target itself.
+#
+# It defines no account on purpose, so nothing published has a login whose password is
+# written down in this repository. That also means an image built from it boots to a greeter
+# with no account to pick. The local build-qcow2 and build-raw recipes use vm.toml, which
+# adds a throwaway one.
 #
 # Plasma, Kodi and its metadata database, and a Flatpak set do not fit in the 20 GiB this
 # started at.

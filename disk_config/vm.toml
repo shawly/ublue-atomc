@@ -1,0 +1,20 @@
+# Disk layout for the local `just build-qcow2`, `just build-raw` and the `run-vm` recipes.
+#
+# Same layout as disk.toml, plus a login account. bootc-image-builder creates no account of
+# its own, so an image built from disk.toml boots to a greeter with nothing to type into it.
+# The ISO has Anaconda ask for an account instead; a qcow2 has no installer to ask.
+#
+# This file is deliberately not the one CI builds from. .github/workflows/build-disk.yml
+# keeps using disk.toml, so nothing published carries the password below.
+
+[[customizations.filesystem]]
+mountpoint = "/"
+minsize = "40 GiB"
+
+# Throwaway credentials for a disposable local VM. They are in a public repository, so they
+# are worth exactly nothing: do not reuse them anywhere, and do not build an image from this
+# file for a machine that anything else can reach.
+[[customizations.user]]
+name = "atomc"
+password = "atomc"
+groups = ["wheel"]
