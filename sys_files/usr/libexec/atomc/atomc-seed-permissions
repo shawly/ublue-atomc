@@ -8,13 +8,38 @@
 #
 # The inputhandler calls preAuthorize() itself, but it was observed still prompting on a
 # fresh install, so the image writes the entries instead of relying on it.
+#
+# This runs at every login and the entries it writes are a permission the user may revoke
+# through KDE's own UI, so each app id is written once and then left alone. The record of
+# what has been written lives in the user's state directory. An id missing from it is new,
+# either because this is a first login or because a later image added one, and gets seeded;
+# an id present in it is never touched again, whatever the user has since set it to.
 
 set -ouex pipefail
+
+table=kde-authorized
+id=remote-desktop
+
+# Which app id the inputhandler presents to the portal was never established, so all three
+# candidates are set. The empty one is the table's default entry.
+app_ids=("" org.kde.plasma.bigscreen.inputhandler plasma-bigscreen-inputhandler)
+
+stamp="${XDG_STATE_HOME:-${HOME}/.local/state}/atomc/seeded-permissions"
 
 # flatpak permission-set will not create the db directory itself, and on a user who has
 # never run a flatpak it does not exist yet. That is the first boot case this unit is for.
 mkdir -p "${XDG_DATA_HOME:-${HOME}/.local/share}/flatpak/db"
 
-for app_id in "" org.kde.plasma.bigscreen.inputhandler plasma-bigscreen-inputhandler; do
-    flatpak permission-set kde-authorized remote-desktop "${app_id}" yes
+mkdir -p "${stamp%/*}"
+touch "${stamp}"
+
+for app_id in "${app_ids[@]}"; do
+    key="${table} ${id} ${app_id}"
+
+    if grep -qxF "${key}" "${stamp}"; then
+        continue
+    fi
+
+    flatpak permission-set "${table}" "${id}" "${app_id}" yes
+    printf '%s\n' "${key}" >>"${stamp}"
 done
