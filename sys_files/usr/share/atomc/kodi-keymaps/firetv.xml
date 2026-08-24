@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Amazon Fire TV Remote, 1st gen, Bluetooth (VID 1949 PID 0404).
+
+     The remote emits 11 evdev keys and nothing else; the mic button sends no key event at
+     all on Linux. Kodi's stock keyboard.xml already binds ten of them sensibly, so this
+     file only fills the gaps.
+
+     The Menu button additionally needs the hwdb remap in
+     /usr/lib/udev/hwdb.d/70-atomc-firetv-remote.hwdb. Without it the press never reaches
+     the keymap layer. -->
+<keymap>
+  <global>
+    <keyboard>
+      <!-- The remote has no power button, so put the shutdown menu on a long press of
+           Home. Both names are bound because Kodi's libinput table maps XF86HomePage to
+           two different key ids. -->
+      <browser_home mod="longpress">ActivateWindow(ShutdownMenu)</browser_home>
+      <homepage mod="longpress">ActivateWindow(ShutdownMenu)</homepage>
+    </keyboard>
+  </global>
+  <VirtualKeyboard>
+    <keyboard>
+      <!-- Stock keymap puts VoiceRecognizer here, which does nothing on a GBM/libinput
+           build. Shift is more use on a d-pad-only remote. -->
+      <menu>Shift</menu>
+    </keyboard>
+  </VirtualKeyboard>
+</keymap>
