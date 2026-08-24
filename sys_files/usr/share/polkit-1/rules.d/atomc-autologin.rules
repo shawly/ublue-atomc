@@ -1,0 +1,21 @@
+// Let wheel members re-apply autologin without a password prompt.
+//
+// A TV remote cannot type one. Anything that changes the autologin account has to restart
+// the display manager to take effect, and on a couch machine that restart happens with no
+// keyboard in reach.
+//
+// This is the same rule Bazzite ships as bazzite-autologin.rules, widened to
+// plasmalogin.service because atomc-autologin-setup.service is a no-op once the config file
+// exists, so restarting it alone would not apply a changed account.
+//
+// Scope is deliberately narrow: named units only, wheel only. It does not grant
+// manage-units in general.
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("wheel") &&
+        action.id == "org.freedesktop.systemd1.manage-units" &&
+        (action.lookup("unit") == "atomc-autologin-setup.service" ||
+         action.lookup("unit") == "plasmalogin.service"))
+    {
+        return polkit.Result.YES;
+    }
+})
