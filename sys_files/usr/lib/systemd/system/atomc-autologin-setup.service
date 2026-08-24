@@ -1,0 +1,12 @@
+[Unit]
+Description=Name the AtoMC autologin account in plasmalogin.conf.d
+Documentation=man:plasmalogin.conf(5)
+Before=plasmalogin.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/atomc/atomc-autologin-setup
+
+[Install]
+WantedBy=multi-user.target
