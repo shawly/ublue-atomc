@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Desktop
+Comment=End the Bigscreen session and start a plain Plasma desktop
+Exec=/usr/libexec/atomc/atomc-session-select desktop
+Icon=user-desktop
+Terminal=false
+Categories=System;
+Keywords=plasma;desktop;fallback;

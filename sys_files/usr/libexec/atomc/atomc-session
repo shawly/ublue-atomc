@@ -78,6 +78,12 @@ if [[ ${short} -ge ${MAX_SHORT_SESSIONS} ]]; then
 fi
 
 case ${next} in
+desktop)
+    # The way out of Bigscreen on purpose. Relogin=true means a session exit comes straight
+    # back, so reaching the fallback desktop has to go through the marker like Kodi does.
+    # Same exec as the loop guard above, reached deliberately rather than after a failure.
+    exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland
+    ;;
 kodi)
     # /usr/bin/kodi, not kodi-standalone. kodi-standalone wraps this in a loop that restarts
     # Kodi on any exit status outside 0 and 64-66, so a killed Kodi would come back instead

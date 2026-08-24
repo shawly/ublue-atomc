@@ -1,14 +1,14 @@
 #!/bin/bash
-# Usage: atomc-session-select <bigscreen|kodi>
+# Usage: atomc-session-select <bigscreen|kodi|desktop>
 #
 # Names the session the next autologin should start, then ends the current one.
 
 set -uo pipefail
 
-target=${1:?usage: atomc-session-select <bigscreen|kodi>}
+target=${1:?usage: atomc-session-select <bigscreen|kodi|desktop>}
 
 case ${target} in
-bigscreen | kodi) ;;
+bigscreen | kodi | desktop) ;;
 *)
     echo "unknown session: ${target}" >&2
     exit 1
