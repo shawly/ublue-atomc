@@ -72,6 +72,13 @@ dnf5 remove -y \
     plasma-vault \
     plasma-welcome
 
+### Enable services
+
+# The graphical session restarts itself on exit, so a session that dies during startup makes
+# the console unusable. sshd is the way back in from another machine. The base image ships it
+# installed but disabled by 81-desktop.preset.
+systemctl enable sshd.service
+
 ### Install shipped files
 
 # sys_files mirrors the target filesystem, so everything under it lands at the same path.

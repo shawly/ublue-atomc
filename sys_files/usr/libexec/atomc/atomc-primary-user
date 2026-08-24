@@ -1,0 +1,42 @@
+#!/bin/bash
+# Print the account the image treats as the primary user, or exit 1 if there is none.
+#
+# The installer creates the account, so the image cannot know the name at build time. Every
+# piece that needs it (the plasmalogin autologin config, the tty6 getty) resolves it through
+# this script so the answers cannot drift apart.
+
+set -o pipefail
+
+conf=/etc/plasmalogin.conf.d/10-atomc-autologin.conf
+
+# An explicit autologin account wins, so `ujust set-autologin-user` moves the text console
+# along with the graphical session.
+if [[ -r ${conf} ]]; then
+    # KConfig trims whitespace around both sides of the value, so this has to as well.
+    # Leaving a trailing space on would silently fall through to the uid scan and log the
+    # console in as a different account than the graphical session.
+    user=$(sed -n 's/^[[:space:]]*User[[:space:]]*=[[:space:]]*//p' "${conf}" |
+        sed 's/[[:space:]]*$//' | tail -n 1)
+    if [[ -n ${user} ]] && id -u "${user}" >/dev/null 2>&1; then
+        printf '%s\n' "${user}"
+        exit 0
+    fi
+fi
+
+# The installer's first account is uid 1000 on any normal install. The scan covers the case
+# where it is not, such as a home directory restored from a backup that kept its old uid.
+user=$(id -nu 1000 2>/dev/null || true)
+
+if [[ -z ${user} ]]; then
+    user=$(getent passwd | awk -F: '
+        $3 >= 1000 && $3 < 65534 && $7 !~ /(nologin|false|sync)$/ {
+            if (min == "" || $3 < min) { min = $3; name = $1 }
+        }
+        END { print name }')
+fi
+
+if [[ -z ${user} ]]; then
+    exit 1
+fi
+
+printf '%s\n' "${user}"

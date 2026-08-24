@@ -16,19 +16,7 @@ if [[ -e ${conf} ]]; then
     exit 0
 fi
 
-# The installer's first account is uid 1000 on any normal install. The scan covers the case
-# where it is not, such as a home directory restored from a backup that kept its old uid.
-user=$(id -nu 1000 2>/dev/null || true)
-
-if [[ -z ${user} ]]; then
-    user=$(getent passwd | awk -F: '
-        $3 >= 1000 && $3 < 65534 && $7 !~ /(nologin|false|sync)$/ {
-            if (min == "" || $3 < min) { min = $3; name = $1 }
-        }
-        END { print name }')
-fi
-
-if [[ -z ${user} ]]; then
+if ! user=$(/usr/libexec/atomc/atomc-primary-user); then
     echo "no local account with uid >= 1000, leaving autologin unconfigured" >&2
     exit 0
 fi
