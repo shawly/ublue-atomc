@@ -6,14 +6,29 @@
 # start. KConfig takes the whole list from the highest priority file that defines the key,
 # so a copy under /etc/xdg is never read. XDG_CONFIG_HOME comes before all of that.
 #
-# The copy is unconditional rather than a first login seed, so that entries added to a later
-# image reach accounts that already exist. The file belongs to the image; edit
-# /usr/share/atomc/applications-blacklistrc.
+# The copy has to happen at every login rather than once, or a list extended by a later image
+# never reaches an account that already exists. So that this does not also mean overwriting
+# the user's own edits every login, the checksum of the last copy written is kept in the
+# user's state directory: a target that still matches it is one nobody has touched, and only
+# that one is replaced.
 
 set -ouex pipefail
 
 source=/usr/share/atomc/applications-blacklistrc
 target="${XDG_CONFIG_HOME:-${HOME}/.config}/applications-blacklistrc"
+stamp="${XDG_STATE_HOME:-${HOME}/.local/state}/atomc/app-blacklist.sha256"
 
-mkdir -p "${target%/*}"
+if [[ -f ${target} && -f ${stamp} ]]; then
+    written=$(<"${stamp}")
+    current=$(sha256sum <"${target}")
+
+    if [[ ${current} != "${written}" ]]; then
+        # The user has edited their copy. Leave it, and leave the stamp alone as well, so
+        # that reverting the edit hands the file back to the image.
+        exit 0
+    fi
+fi
+
+mkdir -p "${target%/*}" "${stamp%/*}"
 install -m 0644 "${source}" "${target}"
+sha256sum <"${source}" >"${stamp}"

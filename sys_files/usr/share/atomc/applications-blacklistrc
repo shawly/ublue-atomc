@@ -3,8 +3,9 @@
 # KSharedConfig; the list feeds the apps grid, the Games row, the Recent row and the search
 # overlay.
 #
-# This is the image's copy and the place to edit the list. atomc-app-blacklist.service
-# copies it to ~/.config/applications-blacklistrc at every login. It cannot be shipped as
+# This is the image's copy. atomc-app-blacklist.service copies it to
+# ~/.config/applications-blacklistrc at every login, unless that file has been edited since
+# the copy, in which case the edited one stays. It cannot be shipped as
 # /etc/xdg/applications-blacklistrc, because plasma-bigscreen-common-env prepends
 # ~/.config/plasma-bigscreen to XDG_CONFIG_DIRS and plasma-bigscreen-envmanager writes its
 # own blacklist key there on every session start. KConfig does not merge list entries across
