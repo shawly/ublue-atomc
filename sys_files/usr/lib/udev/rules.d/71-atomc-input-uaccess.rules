@@ -1,17 +1,13 @@
 # Hand every input device to whoever owns the active session on the seat.
 #
-# Kodi built for GBM opens the evdev nodes itself instead of receiving them from logind the
-# way a Wayland compositor does, so the account running it needs read access to
-# /dev/input/event*. The installer's account is not in the input group and nothing else
-# grants it.
+# Kodi on GBM opens the evdev nodes itself rather than receiving them from logind, so the
+# account running it needs read access to /dev/input/event*, and it is not in the input group.
+# systemd's 70-uaccess.rules covers input devices only when ID_INPUT_JOYSTICK is set, which
+# leaves out the keyboards and IR remotes a TV uses.
 #
-# systemd ships uaccess for input devices only when ID_INPUT_JOYSTICK is set
-# (70-uaccess.rules). Keyboards and IR remotes are not covered by that, which is exactly the
-# set a TV needs.
-#
-# The number has to be below 73: 73-seat-late.rules is what evaluates TAG=="uaccess" and
-# calls the uaccess builtin, and udev applies rule files in filename order. A tag added
-# after 73 lands in the udev database and never produces an ACL.
+# The number has to stay below 73. udev applies rule files in filename order and
+# 73-seat-late.rules is what evaluates TAG=="uaccess", so a tag added after it lands in the
+# udev database and never produces an ACL.
 ACTION=="remove", GOTO="atomc_input_end"
 SUBSYSTEM=="input", TAG+="uaccess"
 LABEL="atomc_input_end"

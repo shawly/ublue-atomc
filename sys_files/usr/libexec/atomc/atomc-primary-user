@@ -1,20 +1,17 @@
 #!/bin/bash
 # Print the account the image treats as the primary user, or exit 1 if there is none.
 #
-# The installer creates the account, so the image cannot know the name at build time.
-# atomc-autologin-setup resolves it through this script; anything else that comes to need it
-# should do the same, so that the answers cannot drift apart.
+# The installer creates the account, so the name is not known at build time. Anything that
+# needs it resolves it here, so the answers cannot drift apart.
 
 set -o pipefail
 
 conf=/etc/plasmalogin.conf.d/10-atomc-autologin.conf
 
-# An explicit autologin account wins, so `ujust set-autologin-user` moves the text console
-# along with the graphical session.
+# An explicit autologin account wins over the uid scan below.
 if [[ -r ${conf} ]]; then
-    # KConfig trims whitespace around both sides of the value, so this has to as well.
-    # Leaving a trailing space on would silently fall through to the uid scan and log the
-    # console in as a different account than the graphical session.
+    # KConfig trims whitespace on both sides of a value, so this has to as well, or a value
+    # with a trailing space falls through to the scan and resolves to a different account.
     user=$(sed -n 's/^[[:space:]]*User[[:space:]]*=[[:space:]]*//p' "${conf}" |
         sed 's/[[:space:]]*$//' | tail -n 1)
     if [[ -n ${user} ]] && id -u "${user}" >/dev/null 2>&1; then
@@ -23,8 +20,8 @@ if [[ -r ${conf} ]]; then
     fi
 fi
 
-# The installer's first account is uid 1000 on any normal install. The scan covers the case
-# where it is not, such as a home directory restored from a backup that kept its old uid.
+# uid 1000 on any normal install. The scan covers the rest, such as a home directory restored
+# from a backup that kept its old uid.
 user=$(id -nu 1000 2>/dev/null || true)
 
 if [[ -z ${user} ]]; then

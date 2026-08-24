@@ -1,12 +1,9 @@
 #!/bin/bash
 # Name the autologin account in /etc/plasmalogin.conf.d/.
 #
-# The installer creates the account, so the image cannot know the username. Session and
-# Relogin ship as an image-owned default in /usr/lib/plasmalogin/plasmalogin.conf.d/, which
-# leaves only User= to be resolved on the machine.
-#
-# The file is written only when it is absent, so a hand edit or a later
-# `ujust set-autologin-user` survives reboots and image updates.
+# The installer creates the account, so only User= can be resolved on the machine; Session and
+# Relogin ship in /usr/lib/plasmalogin/plasmalogin.conf.d/. Written only when absent, so a
+# hand edit or a later `ujust set-autologin-user` survives reboots and image updates.
 
 set -ouex pipefail
 

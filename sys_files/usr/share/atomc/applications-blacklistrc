@@ -1,24 +1,19 @@
 # Applications that exist in the image but must not appear on the Plasma Bigscreen
-# homescreen. Bigscreen's ApplicationListModel reads applications-blacklistrc through
-# KSharedConfig; the list feeds the apps grid, the Games row, the Recent row and the search
-# overlay.
+# homescreen. Bigscreen's ApplicationListModel reads this list through KSharedConfig and it
+# feeds the apps grid, the Games row, the Recent row and the search overlay.
 #
-# This is the image's copy. atomc-app-blacklist.service copies it to
-# ~/.config/applications-blacklistrc at every login, unless that file has been edited since
-# the copy, in which case the edited one stays. It cannot be shipped as
-# /etc/xdg/applications-blacklistrc, because plasma-bigscreen-common-env prepends
-# ~/.config/plasma-bigscreen to XDG_CONFIG_DIRS and plasma-bigscreen-envmanager writes its
-# own blacklist key there on every session start. KConfig does not merge list entries across
-# the cascade, so that file would win outright. XDG_CONFIG_HOME outranks both.
+# atomc-app-blacklist.service copies this file to ~/.config/applications-blacklistrc at every
+# login. It cannot ship as /etc/xdg/applications-blacklistrc: plasma-bigscreen-envmanager
+# writes its own blacklist key into ~/.config/plasma-bigscreen, which comes earlier in
+# XDG_CONFIG_DIRS, and KConfig does not merge list entries across the cascade.
 #
-# Because this replaces the envmanager's value rather than adding to it, the entries it
-# writes are repeated here. The waydroid ones name applications this image does not install,
-# and are kept only so that nothing upstream hides comes back.
+# Because this replaces the envmanager's value rather than adding to it, the entries it writes
+# are repeated here. The waydroid ones name applications this image does not install.
 #
-# Entries are desktop entry names: the .desktop basename with the suffix dropped. Not package
+# Entries are desktop entry names, the .desktop basename with the suffix dropped, not package
 # names.
 #
-# kodi is on the list on purpose. Its stock launcher starts Kodi inside the Plasma session,
+# kodi is on the list on purpose: its stock launcher starts Kodi inside the Plasma session,
 # where it gets no direct DRM access. atomc-kodi.desktop is the tile that ends the session and
 # starts Kodi on GBM, and that one stays visible.
 

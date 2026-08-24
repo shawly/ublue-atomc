@@ -2,23 +2,17 @@
 # The session plasmalogin autologins into. Reads a one-shot marker, resets it, execs the
 # session it named.
 #
-# Bigscreen and Kodi cannot run at the same time: only one process can be DRM master, and
-# Kodi on GBM takes it. Switching therefore means ending the current session and letting
-# plasmalogin autologin again, which it does because Relogin=true.
+# Bigscreen and Kodi cannot run at the same time: only one process can be DRM master and Kodi
+# on GBM takes it, so switching means ending the session and letting plasmalogin autologin
+# again, which it does because Relogin=true. The marker is reset before the exec, so however
+# the session dies the next autologin lands on Bigscreen.
 #
-# The marker is reset before the exec, not after the session ends, so however the session
-# dies (clean exit, crash, SIGKILL) the next autologin lands on Bigscreen with nothing to
-# clean up.
-#
-# Relogin=true also means a session that dies during startup is restarted forever. The guard
-# below is what stops that, by falling back to a plain Plasma desktop, which is navigable
-# with a keyboard and mouse from the couch.
+# Relogin=true also means a session that dies during startup is restarted forever. The loop
+# guard below falls back to a plain Plasma desktop, which a keyboard and mouse can navigate.
 
-# A session that dies during startup dies in a second or two. A session someone actually used
-# and then switched away from lasted longer than this.
+# A session that dies during startup dies in a second or two.
 SHORT_SESSION_SECONDS=10
-# Consecutive short sessions tolerated before the fallback. Two, so the third start is the
-# one that falls back.
+# Two, so the third start is the one that falls back.
 MAX_SHORT_SESSIONS=2
 
 state="${XDG_STATE_HOME:-${HOME}/.local/state}/atomc"
@@ -35,27 +29,25 @@ if [[ -r ${marker} ]]; then
     next=$(<"${marker}")
 fi
 
-# No set -e anywhere in this script. A wrapper that dies before its exec leaves plasmalogin
-# relogging into a session that never starts, which is a boot loop with no way in except a
-# text console or ssh. Every failure here falls through to starting something.
+# No set -e anywhere in this script. A wrapper that dies before its exec is a boot loop with
+# no way in except a text console or ssh, so every failure falls through to starting
+# something.
 mkdir -p "${state}" 2>/dev/null && printf 'bigscreen\n' >"${marker}" 2>/dev/null
-
-### Loop guard
 
 now=$(date +%s)
 last=0
 short=0
 
-# One line, "<epoch> <count>". A missing or corrupt file counts as a clean slate rather than
-# an error, so a wiped state directory cannot wedge the machine in the fallback.
+# One line, "<epoch> <count>". A missing or corrupt file is a clean slate, so a wiped state
+# directory cannot wedge the machine in the fallback.
 if [[ -r ${history} ]]; then
     read -r last short _ <"${history}"
     [[ ${last} =~ ^[0-9]+$ ]] || last=0
     [[ ${short} =~ ^[0-9]+$ ]] || short=0
 fi
 
-# The wrapper execs the session, so it never sees the session end. The gap between two
-# consecutive starts is how long the session in between lasted.
+# The wrapper execs the session and never sees it end, so the gap between two starts is how
+# long the session in between lasted.
 if [[ ${last} -gt 0 && $((now - last)) -lt ${SHORT_SESSION_SECONDS} ]]; then
     short=$((short + 1))
 else
@@ -67,8 +59,8 @@ printf '%s %s\n' "${now}" "${short}" >"${history}" 2>/dev/null
 if [[ ${short} -ge ${MAX_SHORT_SESSIONS} ]]; then
     log "session '${next}' ended within ${SHORT_SESSION_SECONDS}s ${short} times in a row, starting a plain Plasma desktop instead"
 
-    # Reached only when the fallback is failing too. Nothing left to try, so slow the loop
-    # down enough to leave the machine responsive and the journal readable.
+    # The fallback is failing too. Nothing left to try, so slow the loop down enough to leave
+    # the machine responsive and the journal readable.
     if [[ ${short} -gt $((MAX_SHORT_SESSIONS + 1)) ]]; then
         log "the plain Plasma desktop is not starting either; see journalctl -b"
         sleep 10
@@ -79,21 +71,19 @@ fi
 
 case ${next} in
 desktop)
-    # The way out of Bigscreen on purpose. Relogin=true means a session exit comes straight
-    # back, so reaching the fallback desktop has to go through the marker like Kodi does.
-    # Same exec as the loop guard above, reached deliberately rather than after a failure.
+    # Relogin=true means a session exit comes straight back, so reaching the desktop on
+    # purpose has to go through the marker like Kodi does.
     exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/startplasma-wayland
     ;;
 kodi)
-    # /usr/bin/kodi, not kodi-standalone. kodi-standalone wraps this in a loop that restarts
-    # Kodi on any exit status outside 0 and 64-66, so a killed Kodi would come back instead
-    # of handing the machine to the greeter. Everything else kodi-standalone does is either
-    # this same command line or a start-pulseaudio-x11 call that does nothing here.
+    # Not kodi-standalone: it wraps this in a loop that restarts Kodi on any exit status
+    # outside 0 and 64-66, so a killed Kodi would come back instead of handing the machine to
+    # the greeter. The rest of what it does is this command line and a start-pulseaudio-x11
+    # call that does nothing here.
     exec /usr/bin/kodi --standalone --windowing=gbm
     ;;
 *)
-    # The same command plasma-bigscreen-wayland.desktop runs. The wrapper starts a session
-    # bus when the session does not already have one.
+    # The same command plasma-bigscreen-wayland.desktop runs.
     exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/plasma-bigscreen-wayland
     ;;
 esac

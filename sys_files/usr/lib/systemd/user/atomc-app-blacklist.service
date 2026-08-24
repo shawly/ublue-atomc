@@ -1,9 +1,9 @@
 [Unit]
 Description=Install the Bigscreen homescreen application blacklist for this user
 Documentation=https://invent.kde.org/plasma/plasma-bigscreen
-# ApplicationListModel reads the blacklist once, when plasmashell loads the homescreen, so
-# the file has to be in place before that. The ordering on plasma-plasmashell.service is
-# ignored on a session that does not have it.
+# ApplicationListModel reads the blacklist once, when plasmashell loads the homescreen, so the
+# file has to be in place before that. The plasma-plasmashell.service ordering is ignored on a
+# session that does not have that unit.
 Before=default.target
 Before=plasma-plasmashell.service
 ConditionPathExists=/usr/share/atomc/applications-blacklistrc

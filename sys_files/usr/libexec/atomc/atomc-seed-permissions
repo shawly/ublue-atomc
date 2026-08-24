@@ -1,33 +1,29 @@
 #!/bin/bash
 # Pre-authorise the XDG RemoteDesktop portal for plasma-bigscreen-inputhandler.
 #
-# The inputhandler has no uinput backend. Every remote control and CEC key press is
-# injected through org.freedesktop.portal.RemoteDesktop, and with no stored permission the
-# portal shows a "Control input devices" consent dialog at session start. On a TV that
-# dialog blocks the only input device that could dismiss it.
+# The inputhandler has no uinput backend: every remote control and CEC key press goes through
+# org.freedesktop.portal.RemoteDesktop, and without a stored permission the portal opens a
+# consent dialog at session start that blocks the only input device that could dismiss it. The
+# inputhandler calls preAuthorize() itself but has been seen prompting anyway on a fresh
+# install.
 #
-# The inputhandler calls preAuthorize() itself, but it was observed still prompting on a
-# fresh install, so the image writes the entries instead of relying on it.
-#
-# This runs at every login and the entries it writes are a permission the user may revoke
-# through KDE's own UI, so each app id is written once and then left alone. The record of
-# what has been written lives in the user's state directory. An id missing from it is new,
-# either because this is a first login or because a later image added one, and gets seeded;
-# an id present in it is never touched again, whatever the user has since set it to.
+# The entries are a permission the user can revoke in KDE's UI, so each app id is written once
+# and then left alone. The record of what has been written lives in the user's state
+# directory; an id missing from it is new, either a first login or one a later image added.
 
 set -ouex pipefail
 
 table=kde-authorized
 id=remote-desktop
 
-# Which app id the inputhandler presents to the portal was never established, so all three
-# candidates are set. The empty one is the table's default entry.
+# Which app id the inputhandler presents to the portal is not known, so all three candidates
+# are set. The empty one is the table's default entry.
 app_ids=("" org.kde.plasma.bigscreen.inputhandler plasma-bigscreen-inputhandler)
 
 stamp="${XDG_STATE_HOME:-${HOME}/.local/state}/atomc/seeded-permissions"
 
-# flatpak permission-set will not create the db directory itself, and on a user who has
-# never run a flatpak it does not exist yet. That is the first boot case this unit is for.
+# flatpak permission-set will not create the db directory, and a user who has never run a
+# flatpak does not have one.
 mkdir -p "${XDG_DATA_HOME:-${HOME}/.local/share}/flatpak/db"
 
 mkdir -p "${stamp%/*}"

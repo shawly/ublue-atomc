@@ -48,8 +48,8 @@ fix-input-perms:
     fi
 
     # The input group lives in /usr/lib/group and reaches nsswitch through altfiles, so
-    # /etc/group has no line for it. usermod only edits /etc/group: given a group it cannot
-    # find there it changes nothing and still exits 0. Copy the line over first.
+    # /etc/group has no line for it. usermod only edits /etc/group, and given a group it
+    # cannot find there it changes nothing and still exits 0.
     if ! grep -qE '^input:' /etc/group; then
         if ! getent group input >/dev/null; then
             echo "No input group on this system. Nothing to add ${user} to."
