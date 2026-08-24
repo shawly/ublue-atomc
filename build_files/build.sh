@@ -96,3 +96,19 @@ systemctl enable sshd.service
 
 # sys_files mirrors the target filesystem, so everything under it lands at the same path.
 cp -r /ctx/sys_files/* /
+
+### Clean up dnf state
+
+# dnf5 leaves a lock file under /var/lib/dnf and an empty /run/dnf. Both trip
+# `bootc container lint`, and both are wrong to ship: /var is machine state that a bootc
+# update never touches again, and /run is recreated on every boot. The base image has
+# neither directory, so nothing here removes something kinoite-main owns.
+#
+# /var/cache and /var/log are cache mounts in the Containerfile and are not in the layer,
+# so `dnf5 clean all` has nothing left to do afterwards.
+dnf5 clean all
+rm -rf /var/lib/dnf /run/dnf
+
+# Removing the dnf directory leaves /var/lib empty. The base image has no /var/lib at all,
+# and systemd-tmpfiles recreates it at boot, so the image should not own it either.
+rmdir --ignore-fail-on-non-empty /var/lib
