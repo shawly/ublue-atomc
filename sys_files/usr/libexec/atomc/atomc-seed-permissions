@@ -1,0 +1,20 @@
+#!/bin/bash
+# Pre-authorise the XDG RemoteDesktop portal for plasma-bigscreen-inputhandler.
+#
+# The inputhandler has no uinput backend. Every remote control and CEC key press is
+# injected through org.freedesktop.portal.RemoteDesktop, and with no stored permission the
+# portal shows a "Control input devices" consent dialog at session start. On a TV that
+# dialog blocks the only input device that could dismiss it.
+#
+# The inputhandler calls preAuthorize() itself, but it was observed still prompting on a
+# fresh install, so the image writes the entries instead of relying on it.
+
+set -ouex pipefail
+
+# flatpak permission-set will not create the db directory itself, and on a user who has
+# never run a flatpak it does not exist yet. That is the first boot case this unit is for.
+mkdir -p "${XDG_DATA_HOME:-${HOME}/.local/share}/flatpak/db"
+
+for app_id in "" org.kde.plasma.bigscreen.inputhandler plasma-bigscreen-inputhandler; do
+    flatpak permission-set kde-authorized remote-desktop "${app_id}" yes
+done

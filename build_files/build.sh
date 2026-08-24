@@ -13,3 +13,8 @@ set -ouex pipefail
 # plasma-bigscreen-inputhandler along with the wayland session file.
 dnf5 install -y \
     plasma-bigscreen
+
+### Install shipped files
+
+# sys_files mirrors the target filesystem, so everything under it lands at the same path.
+cp -r /ctx/sys_files/* /

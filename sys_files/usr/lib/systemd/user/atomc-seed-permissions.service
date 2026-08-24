@@ -1,0 +1,15 @@
+[Unit]
+Description=Pre-authorise the RemoteDesktop portal for the Bigscreen input handler
+Documentation=https://invent.kde.org/plasma/plasma-bigscreen
+# The permission store is D-Bus activatable, so nothing has to be started first, but the
+# entries have to exist before the input handler asks the portal for a session.
+Before=default.target
+ConditionPathExists=/usr/bin/plasma-bigscreen-inputhandler
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/atomc/atomc-seed-permissions
+
+[Install]
+WantedBy=default.target
