@@ -1,0 +1,29 @@
+#!/bin/bash
+# Usage: atomc-session-select <bigscreen|kodi>
+#
+# Names the session the next autologin should start, then ends the current one.
+
+set -uo pipefail
+
+target=${1:?usage: atomc-session-select <bigscreen|kodi>}
+
+case ${target} in
+bigscreen | kodi) ;;
+*)
+    echo "unknown session: ${target}" >&2
+    exit 1
+    ;;
+esac
+
+state="${XDG_STATE_HOME:-${HOME}/.local/state}/atomc"
+mkdir -p "${state}"
+printf '%s\n' "${target}" >"${state}/next-session"
+
+# Plasma's own logout path, so the session saves and shuts down the way it would from the
+# menu. The binary is qdbus-qt6; Fedora's qt6-qttools ships no plain qdbus or qdbus6.
+if qdbus-qt6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout 2>/dev/null; then
+    exit 0
+fi
+
+# Kodi has no logout method, and neither does a Plasma session whose shell has died.
+exec loginctl terminate-session "${XDG_SESSION_ID:?no XDG_SESSION_ID to terminate}"

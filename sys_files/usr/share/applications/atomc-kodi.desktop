@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Kodi
+Comment=End the Plasma session and start Kodi
+Exec=/usr/libexec/atomc/atomc-session-select kodi
+Icon=kodi
+Terminal=false
+Categories=AudioVideo;Video;Player;TV;
+Keywords=media;center;tv;movies;series;

@@ -1,0 +1,38 @@
+#!/bin/bash
+# The session plasmalogin autologins into. Reads a one-shot marker, resets it, execs the
+# session it named.
+#
+# Bigscreen and Kodi cannot run at the same time: only one process can be DRM master, and
+# Kodi on GBM takes it. Switching therefore means ending the current session and letting
+# plasmalogin autologin again, which it does because Relogin=true.
+#
+# The marker is reset before the exec, not after the session ends, so however the session
+# dies (clean exit, crash, SIGKILL) the next autologin lands on Bigscreen with nothing to
+# clean up.
+
+state="${XDG_STATE_HOME:-${HOME}/.local/state}/atomc"
+marker="${state}/next-session"
+
+next=bigscreen
+if [[ -r ${marker} ]]; then
+    next=$(<"${marker}")
+fi
+
+# A failure here must not stop the session from starting, so no set -e. Losing the reset
+# only means one extra trip through Kodi.
+mkdir -p "${state}" 2>/dev/null && printf 'bigscreen\n' >"${marker}" 2>/dev/null
+
+case ${next} in
+kodi)
+    # /usr/bin/kodi, not kodi-standalone. kodi-standalone wraps this in a loop that restarts
+    # Kodi on any exit status outside 0 and 64-66, so a killed Kodi would come back instead
+    # of handing the machine to the greeter. Everything else kodi-standalone does is either
+    # this same command line or a start-pulseaudio-x11 call that does nothing here.
+    exec /usr/bin/kodi --standalone --windowing=gbm
+    ;;
+*)
+    # The same command plasma-bigscreen-wayland.desktop runs. The wrapper starts a session
+    # bus when the session does not already have one.
+    exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/plasma-bigscreen-wayland
+    ;;
+esac

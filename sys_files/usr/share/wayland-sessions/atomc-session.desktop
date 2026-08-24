@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=AtoMC
+Comment=Plasma Bigscreen or Kodi, whichever the marker names
+Exec=/usr/libexec/atomc/atomc-session
+TryExec=/usr/libexec/atomc/atomc-session
+DesktopNames=KDE
