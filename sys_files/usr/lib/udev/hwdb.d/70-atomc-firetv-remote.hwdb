@@ -1,0 +1,14 @@
+# Amazon Fire TV Remote, 1st gen (Bluetooth HID, VID 1949 PID 0404)
+#
+# The hamburger/Menu button emits KEY_MENU (139). xkbcommon turns that into the keysym
+# XF86MenuKB, and Kodi's libinput backend has no mapping for XF86MenuKB, so the press is
+# dropped before any Kodi keymap sees it. Kodi does map the keysym "Menu", which comes from
+# KEY_COMPOSE (127).
+#
+# c0040 is the HID Consumer Page usage "AC Menu" that this remote reports alongside the key
+# event. It is a HID usage code, so it does not depend on the xkb layout.
+#
+# Every other button on this remote already produces a keysym Kodi knows, so nothing else
+# needs remapping here.
+evdev:input:b0005v1949p0404*
+ KEYBOARD_KEY_c0040=compose

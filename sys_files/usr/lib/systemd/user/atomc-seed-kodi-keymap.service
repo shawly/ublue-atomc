@@ -1,0 +1,15 @@
+[Unit]
+Description=Write the Fire TV remote keymap into the Kodi profile
+Documentation=https://kodi.wiki/view/Keymap
+Before=default.target
+# One binary with every windowing backend compiled in; there is no kodi-gbm. If Kodi is ever
+# dropped from the image this unit becomes a no-op.
+ConditionPathExists=/usr/lib64/kodi/kodi.bin
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/atomc/atomc-seed-kodi-keymap
+
+[Install]
+WantedBy=default.target

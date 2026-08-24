@@ -1,0 +1,51 @@
+#!/bin/bash
+# Write the Fire TV remote keymap into the user's Kodi profile.
+#
+# Kodi's stock keyboard.xml already binds nine of the remote's eleven keys. This file covers
+# the two it does not: a long press of Home, which is the only way to reach a shutdown menu
+# on a remote with no power button, and the Menu key inside the virtual keyboard.
+#
+# The Menu key additionally needs the hwdb remap in
+# /usr/lib/udev/hwdb.d/70-atomc-firetv-remote.hwdb. Without it the press never reaches the
+# keymap layer at all.
+
+set -ouex pipefail
+
+keymaps="${HOME}/.kodi/userdata/keymaps"
+
+# Kodi creates its profile on first launch. This unit runs before that has ever happened, so
+# the directory has to be created here.
+mkdir -p "${keymaps}"
+
+# Written whole rather than appended, so a second login replaces the file instead of
+# doubling it.
+cat >"${keymaps}/firetv.xml" <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Amazon Fire TV Remote, 1st gen, Bluetooth (VID 1949 PID 0404).
+
+     The remote emits 11 evdev keys and nothing else; the mic button sends no key event at
+     all on Linux. Kodi's stock keyboard.xml already binds ten of them sensibly, so this
+     file only fills the gaps.
+
+     The Menu button additionally needs the hwdb remap in
+     /usr/lib/udev/hwdb.d/70-atomc-firetv-remote.hwdb. Without it the press never reaches
+     the keymap layer. -->
+<keymap>
+  <global>
+    <keyboard>
+      <!-- The remote has no power button, so put the shutdown menu on a long press of
+           Home. Both names are bound because Kodi's libinput table maps XF86HomePage to
+           two different key ids. -->
+      <browser_home mod="longpress">ActivateWindow(ShutdownMenu)</browser_home>
+      <homepage mod="longpress">ActivateWindow(ShutdownMenu)</homepage>
+    </keyboard>
+  </global>
+  <VirtualKeyboard>
+    <keyboard>
+      <!-- Stock keymap puts VoiceRecognizer here, which does nothing on a GBM/libinput
+           build. Shift is more use on a d-pad-only remote. -->
+      <menu>Shift</menu>
+    </keyboard>
+  </VirtualKeyboard>
+</keymap>
+XML

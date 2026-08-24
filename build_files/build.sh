@@ -97,6 +97,18 @@ systemctl enable sshd.service
 # sys_files mirrors the target filesystem, so everything under it lands at the same path.
 cp -r /ctx/sys_files/* /
 
+### Compile the hardware database
+
+# udev reads the compiled /etc/udev/hwdb.bin, not the .hwdb sources, and it takes the first
+# binary it finds, so the one in /etc shadows anything under /usr/lib. The file is an rpm
+# %ghost, generated rather than shipped, so regenerating it here is what the base image did
+# too.
+#
+# systemd-hwdb-update.service would also rebuild it on boot, but only when
+# ConditionNeedsUpdate=/etc fires. Building it now means the mapping is in the image and can
+# be checked with `systemd-hwdb query` without booting anything.
+systemd-hwdb update
+
 ### Clean up dnf state
 
 # dnf5 leaves a lock file under /var/lib/dnf and an empty /run/dnf. Both trip
