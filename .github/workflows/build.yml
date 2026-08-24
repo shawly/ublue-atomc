@@ -15,7 +15,7 @@ on:
 
 env:
   IMAGE_DESC: "Fedora Atomic media centre image: Plasma Bigscreen shell with Kodi in its own session"
-  # Pinned, not derived from the repository name. The repository is ublue-atomicmc and the
+  # Pinned, not derived from the repository name. The repository is ublue-atomc and the
   # image is published as ghcr.io/shawly/atomc.
   IMAGE_NAME: "atomc"
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
