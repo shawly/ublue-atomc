@@ -1,3 +1,8 @@
+# Disk layout for `just build-qcow2` and `just build-raw`. The ISO does not use this file;
+# Anaconda partitions the target itself.
+#
+# Plasma, Kodi and its metadata database, and a Flatpak set do not fit in the 20 GiB this
+# started at.
 [[customizations.filesystem]]
 mountpoint = "/"
-minsize = "20 GiB"
+minsize = "40 GiB"
