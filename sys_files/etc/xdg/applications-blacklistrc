@@ -6,10 +6,6 @@
 # Entries are desktop entry names: the .desktop basename with the suffix dropped. Not package
 # names.
 #
-# Everything here is still installed and still launches from the fallback Plasma desktop.
-# Hiding rather than uninstalling because removing a package takes its dependencies with it:
-# dropping kde-connect made Bigscreen itself crash.
-#
 # kodi is on the list on purpose. Its stock launcher starts Kodi inside the Plasma session,
 # where it gets no direct DRM access. atomc-kodi.desktop is the tile that ends the session and
 # starts Kodi on GBM, and that one stays visible.
