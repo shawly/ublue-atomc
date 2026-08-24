@@ -85,17 +85,32 @@ dnf5 remove -y \
     plasma-vault \
     plasma-welcome
 
+### Install shipped files
+
+# sys_files mirrors the target filesystem, so everything under it lands at the same path.
+cp -r /ctx/sys_files/* /
+
 ### Enable services
+
+# Enablement goes through systemctl rather than a .wants symlink under /usr/lib. Both start
+# the unit, but only this one makes `systemctl is-enabled` say so, and someone reading
+# `disabled` on a unit that does run has no way to tell it apart from one that does not. The
+# symlinks land in /etc, which is where kinoite-main puts its own.
+#
+# This has to come after the sys_files copy, because systemctl refuses to enable a unit whose
+# file is not there yet.
 
 # The graphical session restarts itself on exit, so a session that dies during startup makes
 # the console unusable. sshd is the way back in from another machine. The base image ships it
 # installed but disabled by 81-desktop.preset.
 systemctl enable sshd.service
 
-### Install shipped files
+systemctl enable atomc-autologin-setup.service
 
-# sys_files mirrors the target filesystem, so everything under it lands at the same path.
-cp -r /ctx/sys_files/* /
+# --global enables for every user rather than for root, whose session never starts here.
+systemctl --global enable \
+    atomc-seed-permissions.service \
+    atomc-seed-kodi-keymap.service
 
 ### Compile the hardware database
 
