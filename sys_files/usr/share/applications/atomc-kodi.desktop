@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=Kodi
-Comment=End the Bigscreen session and start Kodi
+Name=Kodi (GBM)
+Comment=End the Bigscreen session and start Kodi on GBM
 Exec=/usr/libexec/atomc/atomc-session-select kodi
 Icon=kodi
 Terminal=false
