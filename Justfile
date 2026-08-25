@@ -186,7 +186,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
       "${target_image}:${tag}"
 
     mkdir -p output
-    sudo mv -f $BUILDTMP/* output/ || (rm -rf output/qcow2 output/raw output/bootiso && sudo mv -f $BUILDTMP/* output/)
+    sudo mv -f $BUILDTMP/* output/ || (rm -rfv output/qcow2 output/raw output/bootiso && sudo mv -fv $BUILDTMP/* output/)
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
 

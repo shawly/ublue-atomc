@@ -1,0 +1,14 @@
+#!/bin/bash
+# Start the first login app picker.
+#
+# Flathub is configured as a system remote in /etc/flatpak/remotes.d, and a user
+# installation does not inherit it. The picker installs with --user, because a system
+# install needs org.freedesktop.Flatpak.app-install from polkit, which is a password
+# prompt on a device driven by a remote. So the remote has to exist in the user
+# installation before the picker can resolve a single ref.
+
+set -ouex pipefail
+
+flatpak remote-add --user --if-not-exists flathub /etc/flatpak/remotes.d/flathub.flatpakrepo
+
+exec plasmawindowed org.kde.plasma.atomc.hello

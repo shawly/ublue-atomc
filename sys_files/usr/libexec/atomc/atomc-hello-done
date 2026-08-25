@@ -1,0 +1,11 @@
+#!/bin/bash
+# Record that the app picker has been seen, which is what stops atomc-hello.service from
+# starting it again. It records that the screen was shown, not what was installed, so
+# uninstalling an app later never brings it back.
+
+set -ouex pipefail
+
+stamp="${XDG_STATE_HOME:-${HOME}/.local/state}/atomc/hello-done"
+
+mkdir -p "${stamp%/*}"
+touch "${stamp}"

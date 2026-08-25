@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Category": "System Information",
+        "Description": "Pick the recommended applications to install on first login",
+        "Id": "org.kde.plasma.atomc.hello",
+        "License": "GPL-2.0-or-later",
+        "Name": "AtoMC Welcome"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

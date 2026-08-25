@@ -1,0 +1,25 @@
+{
+    "apps": [
+        {
+            "id": "io.github.kolunmi.Bazaar",
+            "name": "Bazaar",
+            "description": "Nicer than KDE Discover in terms of looks, highly optional.",
+            "icon": "system-software-install",
+            "default": true
+        },
+        {
+            "id": "rocks.shy.VacuumTube",
+            "name": "VacuumTube",
+            "description": "YouTube's living room interface, with an ad blocker and sponsor skipping.",
+            "icon": "applications-multimedia",
+            "default": true
+        },
+        {
+            "id": "nl.jknaapen.fladder",
+            "name": "Fladder",
+            "description": "Jellyfin client with remote friendly controls. Needs a Jellyfin server on the network.",
+            "icon": "video-television",
+            "default": false
+        }
+    ]
+}

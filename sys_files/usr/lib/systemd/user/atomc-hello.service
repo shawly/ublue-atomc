@@ -1,0 +1,16 @@
+[Unit]
+Description=First login app picker
+# The picker is a window on the session, so it needs the session up rather than to be
+# ordered ahead of it the way the seed units are.
+After=plasma-plasmashell.service
+ConditionPathExists=!%S/atomc/hello-done
+ConditionPathExists=/usr/libexec/atomc/atomc-hello
+
+[Service]
+Type=simple
+# Needed for file:// access to the recommended-apps.json file
+Environment=QML_XHR_ALLOW_FILE_READ=1
+ExecStart=/usr/libexec/atomc/atomc-hello
+
+[Install]
+WantedBy=default.target
