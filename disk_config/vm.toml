@@ -14,6 +14,9 @@ minsize = "40 GiB"
 # Throwaway credentials for a disposable local VM. They are in a public repository, so they
 # are worth exactly nothing: do not reuse them anywhere, and do not build an image from this
 # file for a machine that anything else can reach.
+# `just build-qcow2` does not build from this file directly. It copies it to output/vm.toml
+# and appends a `key =` line holding the public half of output/vm-ssh/id_ed25519, which is
+# what `just vm-ssh` logs in with. The user block therefore has to stay last in this file.
 [[customizations.user]]
 name = "atomc"
 password = "atomc"

@@ -2,6 +2,9 @@ export image_name := env("IMAGE_NAME", "atomc") # output image name, usually sam
 export default_tag := env("DEFAULT_TAG", "latest")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest")
 
+# The account disk_config/vm.toml creates in the local VM images.
+export vm_user := env("VM_USER", "atomc")
+
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2
 alias run-vm := run-vm-qcow2
@@ -197,13 +200,35 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
 # Example: just _rebuild-bib localhost/fedora latest qcow2 disk_config/disk.toml
 _rebuild-bib $target_image $tag $type $config: (build target_image tag) && (_build-bib target_image tag type config)
 
+# Generate the ssh key the local VM accepts, under the gitignored output directory
+[private]
+_vm-ssh-key:
+    #!/usr/bin/bash
+    set -euo pipefail
+    key="output/vm-ssh/id_ed25519"
+    [[ -f ${key} ]] && exit 0
+    mkdir -p "$(dirname "${key}")"
+    ssh-keygen -t ed25519 -N "" -C "${vm_user}@atomc-vm" -f "${key}" >/dev/null
+    echo "Generated ${key}"
+
+# Write the disk config the VM images are built from: disk_config/vm.toml plus that key
+[private]
+_vm-config: _vm-ssh-key
+    #!/usr/bin/bash
+    set -euo pipefail
+    mkdir -p output
+    {
+        cat disk_config/vm.toml
+        printf 'key = "%s"\n' "$(cat output/vm-ssh/id_ed25519.pub)"
+    } >output/vm.toml
+
 # Build a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
-build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "disk_config/vm.toml")
+build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: _vm-config && (_build-bib target_image tag "qcow2" "output/vm.toml")
 
 # Build a RAW virtual machine image
 [group('Build Virtal Machine Image')]
-build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "disk_config/vm.toml")
+build-raw $target_image=("localhost/" + image_name) $tag=default_tag: _vm-config && (_build-bib target_image tag "raw" "output/vm.toml")
 
 # Build an ISO virtual machine image
 [group('Build Virtal Machine Image')]
@@ -211,11 +236,11 @@ build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build
 
 # Rebuild a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
-rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "qcow2" "disk_config/vm.toml")
+rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: _vm-config && (_rebuild-bib target_image tag "qcow2" "output/vm.toml")
 
 # Rebuild a RAW virtual machine image
 [group('Build Virtal Machine Image')]
-rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "disk_config/vm.toml")
+rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: _vm-config && (_rebuild-bib target_image tag "raw" "output/vm.toml")
 
 # Rebuild an ISO virtual machine image
 [group('Build Virtal Machine Image')]
@@ -245,11 +270,22 @@ _run-vm $target_image $tag $type $config:
     echo "Using Port: ${port}"
     echo "Connect to http://localhost:${port}"
 
+    # A second port for the guest's sshd. The container forwards guest port 22 through
+    # user-mode networking; this publishes it on the host.
+    ssh_port=2222
+    while grep -q :${ssh_port} <<< $(ss -tunalp); do
+        ssh_port=$(( ssh_port + 1 ))
+    done
+    echo "Connect a shell with: just vm-ssh"
+
     # Set up the arguments for running the VM
     run_args=()
-    run_args+=(--rm --privileged)
+    run_args+=(--rm --replace --privileged)
+    run_args+=(--name "${image_name}-vm")
     run_args+=(--pull=newer)
     run_args+=(--publish "127.0.0.1:${port}:8006")
+    run_args+=(--publish "127.0.0.1:${ssh_port}:22")
+    run_args+=(--env "USER_PORTS=22")
     run_args+=(--env "CPU_CORES=4")
     run_args+=(--env "RAM_SIZE=8G")
     run_args+=(--env "DISK_SIZE=64G")
@@ -257,7 +293,9 @@ _run-vm $target_image $tag $type $config:
     run_args+=(--env "GPU=Y")
     run_args+=(--device=/dev/kvm)
     run_args+=(--volume "${PWD}/${image_file}":"/boot.${type}")
-    run_args+=(docker.io/qemux/qemu)
+    # Pinned: 7.49 appends host3d_blob_limit to the virtio-vga-gl device line, and the QEMU
+    # build in that same image has no such property, so the VM does not start with GPU=Y.
+    run_args+=(docker.io/qemux/qemu:7.48)
 
     # Run the VM and open the browser to connect
     (sleep 30 && xdg-open http://localhost:"$port") &
@@ -274,6 +312,34 @@ run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-
 # Run a virtual machine from an ISO
 [group('Run Virtal Machine')]
 run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "disk_config/iso.toml")
+
+# Open a shell on the running VM, or run a command on it
+[group('Run Virtal Machine')]
+vm-ssh *ARGS:
+    #!/usr/bin/bash
+    set -euo pipefail
+
+    key="output/vm-ssh/id_ed25519"
+    if [[ ! -f ${key} ]]; then
+        echo "No ${key}. Build the VM image with 'just build-vm' first."
+        exit 1
+    fi
+
+    if ! port=$(podman port "${image_name}-vm" 22 2>/dev/null); then
+        echo "No running ${image_name}-vm container. Start it with 'just run-vm'."
+        exit 1
+    fi
+
+    # The VM is disposable and the host port gets reused, so its host key changes under the
+    # same address on every rebuild. Checking it would only ever produce a false alarm.
+    exec ssh \
+        -p "${port##*:}" \
+        -i "${key}" \
+        -o IdentitiesOnly=yes \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        "${vm_user}@127.0.0.1" {{ ARGS }}
 
 # Run a virtual machine using systemd-vmspawn
 [group('Run Virtal Machine')]
@@ -292,7 +358,6 @@ spawn-vm rebuild="0" type="qcow2" ram="6G":
       --network-user-mode \
       --vsock=false --pass-ssh-key=false \
       -i ./output/**/*.{{ type }}
-
 
 # Runs shell check on all Bash scripts
 lint:
