@@ -1,0 +1,4 @@
+# System default. KConfig cascades over XDG_CONFIG_DIRS, so ~/.config wins over this.
+# The Bigscreen homescreen inhibits power management while it runs; this lets the box idle.
+[General]
+pmInhibitionEnabled=false

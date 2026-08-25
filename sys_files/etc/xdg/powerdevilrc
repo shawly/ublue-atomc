@@ -1,0 +1,5 @@
+# System default. KConfig cascades over XDG_CONFIG_DIRS, so ~/.config wins over this.
+[AC][SuspendAndShutdown]
+AutoSuspendAction=1
+AutoSuspendIdleTimeoutSec=900
+PowerButtonAction=1

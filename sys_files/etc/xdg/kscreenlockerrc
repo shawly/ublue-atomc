@@ -1,0 +1,5 @@
+# System default. KConfig cascades over XDG_CONFIG_DIRS, so ~/.config wins over this.
+[Daemon]
+Autolock=false
+LockOnResume=false
+Timeout=0

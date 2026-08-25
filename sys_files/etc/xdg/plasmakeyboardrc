@@ -1,0 +1,12 @@
+# System default. KConfig cascades over XDG_CONFIG_DIRS, so ~/.config wins over this.
+#
+# plasma-bigscreen-envmanager writes its own plasmakeyboardrc into the higher priority
+# ~/.config/plasma-bigscreen, but it only sets keyboardNavigationEnabled. KConfig merges a
+# group key by key, so the keys below still come from here.
+#
+# soundEnabled has no effect in this image: Fedora builds qt6-qtvirtualkeyboard without
+# QtMultimedia, so QtQuick.VirtualKeyboard has no MultiSoundEffect type and key press
+# feedback fails to instantiate. The value is shipped as the wanted default anyway, so it
+# starts working if the type ever appears.
+[General]
+enabledLocales=en_US
