@@ -9,6 +9,13 @@
 
 set -ouex pipefail
 
-flatpak remote-add --user --if-not-exists flathub /etc/flatpak/remotes.d/flathub.flatpakrepo
+# Qt 6 refuses XMLHttpRequest reads of file:// URLs unless this is set, and the picker
+# reads its app list that way. The unit sets it too, for a run started by hand.
+export QML_XHR_ALLOW_FILE_READ=1
+
+# Not fatal. A machine that is not on the network yet still gets the picker, and each
+# install reports its own failure on the row it belongs to.
+flatpak remote-add --user --if-not-exists flathub /etc/flatpak/remotes.d/flathub.flatpakrepo ||
+    echo "atomc-hello: could not add the flathub remote to the user installation" >&2
 
 exec plasmawindowed org.kde.plasma.atomc.hello

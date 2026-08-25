@@ -1,16 +1,22 @@
 [Unit]
 Description=First login app picker
-# The picker is a window on the session, so it needs the session up rather than to be
-# ordered ahead of it the way the seed units are.
+# The picker is a window on the session, so it has to be part of the session rather than of
+# default.target. default.target comes up with the user manager, before a compositor exists,
+# and plasmawindowed started there dies with no display to connect to.
+#
+# plasma-core.target is ordered after plasma-kwin_wayland.service, so waiting for plasmashell
+# is also waiting for a compositor.
 After=plasma-plasmashell.service
+PartOf=graphical-session.target
 ConditionPathExists=!%S/atomc/hello-done
 ConditionPathExists=/usr/libexec/atomc/atomc-hello
 
 [Service]
 Type=simple
-# Needed for file:// access to the recommended-apps.json file
+# Qt 6 refuses XMLHttpRequest reads of file:// URLs unless this is set, and the picker
+# reads its app list that way. Without it the list is silently empty.
 Environment=QML_XHR_ALLOW_FILE_READ=1
 ExecStart=/usr/libexec/atomc/atomc-hello
 
 [Install]
-WantedBy=default.target
+WantedBy=plasma-workspace.target
