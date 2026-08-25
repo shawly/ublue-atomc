@@ -186,7 +186,7 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
       "${target_image}:${tag}"
 
     mkdir -p output
-    sudo mv -f $BUILDTMP/* output/
+    sudo mv -f $BUILDTMP/* output/ || (rm -rf output/qcow2 output/raw output/bootiso && sudo mv -f $BUILDTMP/* output/)
     sudo rmdir $BUILDTMP
     sudo chown -R $USER:$USER output/
 
@@ -286,6 +286,7 @@ _run-vm $target_image $tag $type $config:
     run_args+=(--publish "127.0.0.1:${port}:8006")
     run_args+=(--publish "127.0.0.1:${ssh_port}:22")
     run_args+=(--env "USER_PORTS=22")
+    run_args+=(--env "BOOT_MODE=uefi")
     run_args+=(--env "CPU_CORES=4")
     run_args+=(--env "RAM_SIZE=8G")
     run_args+=(--env "DISK_SIZE=64G")

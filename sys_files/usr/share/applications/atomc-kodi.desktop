@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Kodi
-Comment=End the Plasma session and start Kodi
+Comment=End the Bigscreen session and start Kodi
 Exec=/usr/libexec/atomc/atomc-session-select kodi
 Icon=kodi
 Terminal=false
