@@ -1,11 +1,17 @@
 # Amazon Fire TV Remote, 1st gen (Bluetooth HID, VID 1949 PID 0404)
 #
-# The hamburger button emits KEY_MENU (139), which xkbcommon turns into the keysym XF86MenuKB.
-# Kodi's libinput backend has no mapping for that, so the press is dropped before any Kodi
-# keymap sees it. It does map "Menu", the keysym for KEY_COMPOSE (127).
+# The scancodes below are HID usage page values reported alongside the key event, so these
+# matches do not depend on the xkb layout.
 #
-# c0040 is the HID Consumer Page usage "AC Menu" this remote reports alongside the key event,
-# so the match does not depend on the xkb layout. Every other button already produces a keysym
-# Kodi knows.
+# c0040, the hamburger button, emits KEY_MENU (139), which xkbcommon turns into the keysym
+# XF86MenuKB. Kodi's libinput backend has no mapping for that, so the press is dropped before
+# any Kodi keymap sees it. It does map "Menu", the keysym for KEY_COMPOSE (127).
+#
+# 70058, Select, emits KEY_KPENTER, keysym KP_Enter, which Qt reports as Qt.Key_Enter. Every
+# control in Plasma Bigscreen activates on Keys.onReturnPressed, which fires for Qt.Key_Return
+# only, so OK does nothing anywhere in that session. KEY_ENTER gives the keysym Return
+# instead. Kodi is unaffected: its stock keyboard.xml binds <return> and <enter> to the same
+# action everywhere it binds either.
 evdev:input:b0005v1949p0404*
  KEYBOARD_KEY_c0040=compose
+ KEYBOARD_KEY_70058=enter
