@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=YouTube (HDR)
+Comment=End the Bigscreen session and start VacuumTube on gamescope
+Exec=/usr/libexec/atomc/atomc-session-select vacuumtube
+Icon=rocks.shy.VacuumTube
+Terminal=false
+Categories=AudioVideo;Video;Player;TV;
+Keywords=youtube;video;streaming;tv;

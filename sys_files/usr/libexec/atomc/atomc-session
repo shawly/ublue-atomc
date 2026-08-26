@@ -82,6 +82,37 @@ kodi)
     # call that does nothing here.
     exec /usr/bin/kodi --standalone --windowing=gbm
     ;;
+vacuumtube)
+    # VacuumTube is an optional flatpak the first-login picker offers, so it may not be
+    # here. Falling through rather than failing: an immediate exit counts against the loop
+    # guard above, and two of them drop the machine to a plain desktop.
+    if ! flatpak info rocks.shy.VacuumTube >/dev/null 2>&1; then
+        log "rocks.shy.VacuumTube is not installed, starting Bigscreen instead"
+        exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/plasma-bigscreen-wayland
+    fi
+
+    # -w/-h set the resolution the client renders at and default to 1280x720, so they have
+    # to come from the panel. -W/-H are the ones that would set the output mode and they are
+    # ignored in embedded mode, where the output stays native either way.
+    size=()
+    for status in /sys/class/drm/card*-*/status; do
+        [[ -r ${status} && $(<"${status}") == connected ]] || continue
+        read -r mode <"${status%/status}/modes" || continue
+        [[ ${mode} =~ ^([0-9]+)x([0-9]+) ]] || continue
+        size=(-w "${BASH_REMATCH[1]}" -h "${BASH_REMATCH[2]}")
+        break
+    done
+    [[ ${#size[@]} -gt 0 ]] || log "no connected output reported a mode; gamescope will use its 1280x720 default"
+
+    # --backend drm rather than auto: this runs with no WAYLAND_DISPLAY and no DISPLAY, and
+    # a wrong autodetect here is a black screen.
+    #
+    # --expose-wayland plus the Electron hint are what get colour management to the client.
+    # Without either of them Electron lands on gamescope's Xwayland, where wp_color_manager_v1
+    # does not exist and --hdr-enabled has nothing to talk to.
+    exec gamescope --backend drm --hdr-enabled --expose-wayland -f "${size[@]}" -- \
+        flatpak run --env=ELECTRON_OZONE_PLATFORM_HINT=wayland rocks.shy.VacuumTube
+    ;;
 *)
     # The same command plasma-bigscreen-wayland.desktop runs.
     exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/plasma-bigscreen-wayland

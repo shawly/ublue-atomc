@@ -15,7 +15,11 @@ dnf5 install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-releas
 #
 # igt-gpu-tools and libva-utils are for checking hardware decode on the target machine.
 # libva-utils is already in the base image and is named so it survives one that drops it.
+#
+# gamescope hosts the VacuumTube session. It takes DRM master on its own VT the way Kodi
+# does, which is what lets that session switch the display into HDR on its own.
 dnf5 install -y \
+    gamescope \
     igt-gpu-tools \
     kodi \
     kodi-inputstream-adaptive \
