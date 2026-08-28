@@ -83,38 +83,22 @@ kodi)
     exec /usr/bin/kodi --standalone --windowing=gbm
     ;;
 vacuumtube)
-    # VacuumTube is an optional flatpak the first-login picker offers, so it may not be
-    # here. Falling through rather than failing: an immediate exit counts against the loop
-    # guard above, and two of them drop the machine to a plain desktop.
+    # An optional flatpak, so it may be missing. Falling through rather than failing: an
+    # immediate exit counts against the loop guard above, and two of them drop the machine to
+    # a plain desktop.
     if ! flatpak info rocks.shy.VacuumTube >/dev/null 2>&1; then
         log "rocks.shy.VacuumTube is not installed, starting Bigscreen instead"
         exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/plasma-bigscreen-wayland
     fi
 
-    # -W/-H, the output mode, not -w/-h. gamescope picks the connector mode with
-    # find_mode(connector, 0, 0, 0) when -W/-H are unset, which returns the first mode in the
-    # kernel's list, and drm_mode_sort puts the EDID's preferred mode first. This display is
-    # behind an AVR that flags 1280x960 as preferred, so the output came up at 960p.
+    # -W/-H is the output mode. Without it gamescope takes the connector's first mode, which
+    # is whatever the EDID marks preferred and is not always the largest. -w/-h are left unset
+    # so the client renders at the output size instead of being scaled into it. No refresh
+    # rate: the driver lists modes of one size fastest first, and a rate the display does not
+    # have falls back to the preferred mode.
     #
-    # -w/-h are deliberately not passed. gamescope sets the nested size from the output size
-    # when -h is absent, so the client follows the mode rather than being scaled into it.
-    #
-    # No refresh rate either: drm_mode_sort orders the rest by area and then by refresh
-    # descending, so the first mode of the resolved size is the fastest the display offers.
-    # Naming a rate that the display does not have would fall back to the preferred mode,
-    # which is the 1280x960 this avoids.
-    #
-    # The largest mode by area rather than the first line of the modes file, which is not
-    # reliably the preferred one: HDMI-A-1 on the target machine lists 1280x960 ahead of its
-    # eight 3840x2160 entries, and that is what the session rendered at.
-    #
-    # Internal panels are skipped while anything external is attached. This is a laptop
-    # mainboard, so eDP-1 is connected at 1920x1080 whether or not a panel is in the case,
-    # and whether it or HDMI-A-1 comes out of the glob first depends on the collation the
-    # session happens to run under.
-    #
-    # A wrong pick costs scaling quality and nothing else, since gamescope chooses the output
-    # mode itself.
+    # Internal panels are skipped while anything external is attached. A laptop mainboard
+    # reports eDP as connected whether or not a panel is in the case.
     size=()
     picked=
     for pass in external any; do
@@ -137,10 +121,8 @@ vacuumtube)
         [[ ${best} -gt 0 ]] && break
     done
 
-    # --prefer-output takes the connector name without the card prefix. gamescope picks an
-    # output on its own and has its own idea of which to prefer, so name the one that was
-    # just sized for rather than letting the two disagree. An unmatched name is a preference
-    # gamescope ignores, not an error.
+    # gamescope picks an output on its own, so name the one the mode was read from. It wants
+    # the connector name without the card prefix, and ignores a name it cannot match.
     output=()
     if [[ -n ${picked} ]]; then
         output=(--prefer-output "${picked#*-}")
@@ -149,18 +131,15 @@ vacuumtube)
         log "no connected output reported a mode; gamescope will pick the mode itself"
     fi
 
-    # --backend drm rather than auto: this runs with no WAYLAND_DISPLAY and no DISPLAY, and
-    # a wrong autodetect here is a black screen.
+    # --backend drm rather than auto: there is no WAYLAND_DISPLAY or DISPLAY here and a wrong
+    # autodetect is a black screen.
     #
-    # --expose-wayland plus the Electron hint are what get colour management to the client.
-    # Without either of them Electron lands on gamescope's Xwayland, where wp_color_manager_v1
-    # does not exist and --hdr-enabled has nothing to talk to.
+    # --expose-wayland and the Electron hint keep the client off gamescope's Xwayland, which
+    # has no wp_color_manager_v1 for --hdr-enabled to talk to.
     #
-    # --hdr-sdr-content-nits: the output is in HDR10 PQ for the whole session and gamescope
-    # cannot switch it per clip, so SDR video and the YouTube menus are composited into that
-    # container at this diffuse white. gamescope's own default is 400, which is a handheld
-    # number and reads as washed out on a TV; 203 is the BT.2408 reference for graphics white
-    # and puts SDR back at roughly the brightness it had before.
+    # The output is in HDR10 PQ for the whole session, so SDR video and menus are composited
+    # at --hdr-sdr-content-nits. 203 is the BT.2408 graphics white; gamescope's default of 400
+    # is a handheld number and reads washed out on a TV.
     exec gamescope --backend drm --hdr-enabled --hdr-sdr-content-nits 203 --expose-wayland \
         -f "${output[@]}" "${size[@]}" -- \
         flatpak run --env=ELECTRON_OZONE_PLATFORM_HINT=wayland rocks.shy.VacuumTube
