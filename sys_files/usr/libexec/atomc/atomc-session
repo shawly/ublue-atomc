@@ -91,9 +91,18 @@ vacuumtube)
         exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/plasma-bigscreen-wayland
     fi
 
-    # -w/-h set the resolution the client renders at and default to 1280x720, so they have to
-    # come from the display. -W/-H would set the output mode and are ignored in embedded
-    # mode, where the output stays native either way.
+    # -W/-H, the output mode, not -w/-h. gamescope picks the connector mode with
+    # find_mode(connector, 0, 0, 0) when -W/-H are unset, which returns the first mode in the
+    # kernel's list, and drm_mode_sort puts the EDID's preferred mode first. This display is
+    # behind an AVR that flags 1280x960 as preferred, so the output came up at 960p.
+    #
+    # -w/-h are deliberately not passed. gamescope sets the nested size from the output size
+    # when -h is absent, so the client follows the mode rather than being scaled into it.
+    #
+    # No refresh rate either: drm_mode_sort orders the rest by area and then by refresh
+    # descending, so the first mode of the resolved size is the fastest the display offers.
+    # Naming a rate that the display does not have would fall back to the preferred mode,
+    # which is the 1280x960 this avoids.
     #
     # The largest mode by area rather than the first line of the modes file, which is not
     # reliably the preferred one: HDMI-A-1 on the target machine lists 1280x960 ahead of its
@@ -121,7 +130,7 @@ vacuumtube)
                 area=$((BASH_REMATCH[1] * BASH_REMATCH[2]))
                 [[ ${area} -gt ${best} ]] || continue
                 best=${area}
-                size=(-w "${BASH_REMATCH[1]}" -h "${BASH_REMATCH[2]}")
+                size=(-W "${BASH_REMATCH[1]}" -H "${BASH_REMATCH[2]}")
                 picked=${connector##*/}
             done <"${connector}/modes"
         done
@@ -135,9 +144,9 @@ vacuumtube)
     output=()
     if [[ -n ${picked} ]]; then
         output=(--prefer-output "${picked#*-}")
-        log "sizing gamescope for ${picked}: ${size[*]}"
+        log "driving ${picked} at ${size[*]}"
     else
-        log "no connected output reported a mode; gamescope will use its 1280x720 default"
+        log "no connected output reported a mode; gamescope will pick the mode itself"
     fi
 
     # --backend drm rather than auto: this runs with no WAYLAND_DISPLAY and no DISPLAY, and
