@@ -140,7 +140,10 @@ vacuumtube)
     # The output is in HDR10 PQ for the whole session, so SDR video and menus are composited
     # at --hdr-sdr-content-nits. 203 is the BT.2408 graphics white; gamescope's default of 400
     # is a handheld number and reads washed out on a TV.
-    exec gamescope --backend drm --hdr-enabled --hdr-sdr-content-nits 203 --expose-wayland \
+    # systemd-cat execs gamescope with stdout and stderr on a journal stream. Nothing else
+    # connects this session to the journal, so without it gamescope's mode selection and
+    # warnings go nowhere.
+    exec systemd-cat -t atomc-gamescope gamescope --backend drm --hdr-enabled --hdr-sdr-content-nits 203 --expose-wayland \
         -f "${output[@]}" "${size[@]}" -- \
         flatpak run --env=ELECTRON_OZONE_PLATFORM_HINT=wayland rocks.shy.VacuumTube
     ;;
