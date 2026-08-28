@@ -91,18 +91,54 @@ vacuumtube)
         exec /usr/libexec/plasma-dbus-run-session-if-needed /usr/bin/plasma-bigscreen-wayland
     fi
 
-    # -w/-h set the resolution the client renders at and default to 1280x720, so they have
-    # to come from the panel. -W/-H are the ones that would set the output mode and they are
-    # ignored in embedded mode, where the output stays native either way.
+    # -w/-h set the resolution the client renders at and default to 1280x720, so they have to
+    # come from the display. -W/-H would set the output mode and are ignored in embedded
+    # mode, where the output stays native either way.
+    #
+    # The largest mode by area rather than the first line of the modes file, which is not
+    # reliably the preferred one: HDMI-A-1 on the target machine lists 1280x960 ahead of its
+    # eight 3840x2160 entries, and that is what the session rendered at.
+    #
+    # Internal panels are skipped while anything external is attached. This is a laptop
+    # mainboard, so eDP-1 is connected at 1920x1080 whether or not a panel is in the case,
+    # and whether it or HDMI-A-1 comes out of the glob first depends on the collation the
+    # session happens to run under.
+    #
+    # A wrong pick costs scaling quality and nothing else, since gamescope chooses the output
+    # mode itself.
     size=()
-    for status in /sys/class/drm/card*-*/status; do
-        [[ -r ${status} && $(<"${status}") == connected ]] || continue
-        read -r mode <"${status%/status}/modes" || continue
-        [[ ${mode} =~ ^([0-9]+)x([0-9]+) ]] || continue
-        size=(-w "${BASH_REMATCH[1]}" -h "${BASH_REMATCH[2]}")
-        break
+    picked=
+    for pass in external any; do
+        best=0
+        for status in /sys/class/drm/card*-*/status; do
+            [[ -r ${status} && $(<"${status}") == connected ]] || continue
+            connector=${status%/status}
+            if [[ ${pass} == external && ${connector##*/} =~ -(eDP|LVDS|DSI)-[0-9]+$ ]]; then
+                continue
+            fi
+            while read -r mode; do
+                [[ ${mode} =~ ^([0-9]+)x([0-9]+)$ ]] || continue
+                area=$((BASH_REMATCH[1] * BASH_REMATCH[2]))
+                [[ ${area} -gt ${best} ]] || continue
+                best=${area}
+                size=(-w "${BASH_REMATCH[1]}" -h "${BASH_REMATCH[2]}")
+                picked=${connector##*/}
+            done <"${connector}/modes"
+        done
+        [[ ${best} -gt 0 ]] && break
     done
-    [[ ${#size[@]} -gt 0 ]] || log "no connected output reported a mode; gamescope will use its 1280x720 default"
+
+    # --prefer-output takes the connector name without the card prefix. gamescope picks an
+    # output on its own and has its own idea of which to prefer, so name the one that was
+    # just sized for rather than letting the two disagree. An unmatched name is a preference
+    # gamescope ignores, not an error.
+    output=()
+    if [[ -n ${picked} ]]; then
+        output=(--prefer-output "${picked#*-}")
+        log "sizing gamescope for ${picked}: ${size[*]}"
+    else
+        log "no connected output reported a mode; gamescope will use its 1280x720 default"
+    fi
 
     # --backend drm rather than auto: this runs with no WAYLAND_DISPLAY and no DISPLAY, and
     # a wrong autodetect here is a black screen.
@@ -110,7 +146,14 @@ vacuumtube)
     # --expose-wayland plus the Electron hint are what get colour management to the client.
     # Without either of them Electron lands on gamescope's Xwayland, where wp_color_manager_v1
     # does not exist and --hdr-enabled has nothing to talk to.
-    exec gamescope --backend drm --hdr-enabled --expose-wayland -f "${size[@]}" -- \
+    #
+    # --hdr-sdr-content-nits: the output is in HDR10 PQ for the whole session and gamescope
+    # cannot switch it per clip, so SDR video and the YouTube menus are composited into that
+    # container at this diffuse white. gamescope's own default is 400, which is a handheld
+    # number and reads as washed out on a TV; 203 is the BT.2408 reference for graphics white
+    # and puts SDR back at roughly the brightness it had before.
+    exec gamescope --backend drm --hdr-enabled --hdr-sdr-content-nits 203 --expose-wayland \
+        -f "${output[@]}" "${size[@]}" -- \
         flatpak run --env=ELECTRON_OZONE_PLATFORM_HINT=wayland rocks.shy.VacuumTube
     ;;
 *)
